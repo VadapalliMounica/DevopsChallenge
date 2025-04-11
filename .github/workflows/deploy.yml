@@ -1,0 +1,39 @@
+name: Deploy Infrastructure
+
+on:
+  push:
+    branches:
+      - main
+      - development
+      - production
+
+jobs:
+  terraform:
+    name: Terraform Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: 1.5.0
+
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Terraform Init
+      run: terraform init
+      working-directory: environments/${{ github.ref_name }}
+
+    - name: Terraform Plan
+      run: terraform plan -var-file=terraform.tfvars
+      working-directory: environments/${{ github.ref_name }}
+
+    - name: Terraform Apply
+      run: terraform apply -auto-approve -var-file=terraform.tfvars
+      working-directory: environments/${{ github.ref_name }}
